@@ -7,4 +7,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "PDAlbum"
-include ':app'
+include ':app',':mace',':macelibrary',':sematic',':voicetotext'

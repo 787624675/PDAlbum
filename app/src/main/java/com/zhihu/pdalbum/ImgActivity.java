@@ -32,6 +32,8 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
     private ImageView img;
     private CircleImageView rec;
     private CircleImageView play;
+    private CircleImageView browse;
+
     private ImgPresenter imgPresenter;
     private Context context;
     private String imgUrl;
@@ -47,6 +49,7 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
     private Boolean isPlaying;
 
     private byte[] pcmBuffer;
+    private TextView tvClassifyRes;
 
 
     @Override
@@ -60,17 +63,21 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
         showImg(context);
     }
     void initView(){
+
+        imgPresenter = new ImgPresenter();
+
         img = findViewById(R.id.img);
         rec = findViewById(R.id.rec);
         play = findViewById(R.id.play);
+        browse = findViewById(R.id.browse);
         recNote = findViewById(R.id.rec_note);
+        tvClassifyRes = findViewById(R.id.classify_res);
 
         MyButtonListener mbl=new MyButtonListener();
 
         rec.setOnLongClickListener(mbl);
         rec.setOnTouchListener(mbl);
-
-        // see 「empty_xl001」 https://blog.csdn.net/u010574567/article/details/51900453
+        browse.setOnClickListener(mbl);
         play.setOnClickListener(mbl);
 
 
@@ -138,20 +145,21 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
                 Thread mt = new Thread(playPCMRecord, "playPCM");
                 // 步骤4：通过 线程对象 控制线程的状态，如 运行、睡眠、挂起  / 停止
                 mt.start();
-
-//                try {
-//                    playShortAudioFileViaAudioTrack(recordFileName);
-//                } catch (IOException e) {
-//                    Log.d("TAG", "play Error, recordFileName: " + recordFileName);
-//                }
-
-
             }
             else if(view.getId() == R.id.exchange){  // 重新照相或选择图片
 
             }
             else if(view.getId() == R.id.comment){ // comment的显示与隐藏
 
+            }
+            else if(view.getId() == R.id.browse){ // 图像识别/Image Classify
+                imgPresenter.classifyImg(imgUrl,tvClassifyRes);
+                if (tvClassifyRes.getVisibility() == View.VISIBLE){
+                    tvClassifyRes.setVisibility(View.INVISIBLE);
+                }
+                else if(tvClassifyRes.getVisibility() == View.INVISIBLE){
+                    tvClassifyRes.setVisibility(View.VISIBLE);
+                }
             }
         }
         //  https://darksilber.tistory.com/61

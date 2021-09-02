@@ -36,6 +36,14 @@
                 android:layout_marginRight="20dp"
                 android:layout_width="40dp"
                 android:layout_height="40dp"/>
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/browse"
+                android:layout_gravity="bottom"
+                android:src="@mipmap/browse"
+                app:civ_fill_color="@color/blue_tianyi"
+                android:layout_marginRight="20dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"/>
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/play"
             android:layout_gravity="bottom"
@@ -56,10 +64,23 @@
         <TextView
             android:id="@+id/rec_note"
             android:text="录音中..."
+            android:background="@color/white"
             android:visibility="invisible"
             android:layout_marginTop="10dp"
             android:textSize="20sp"
             android:layout_gravity="center_horizontal"
+            android:textAlignment="center"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:id="@+id/classify_res"
+            android:text="#这是什么"
+            android:background="@color/white"
+            android:visibility="invisible"
+            android:layout_marginTop="70dp"
+            android:textSize="40sp"
+            android:layout_gravity="left"
+            android:layout_marginLeft="20dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 

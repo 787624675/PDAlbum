@@ -11,6 +11,10 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/mace" />
+            <option value="$PROJECT_DIR$/macelibrary" />
+            <option value="$PROJECT_DIR$/sematic" />
+            <option value="$PROJECT_DIR$/voicetotext" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

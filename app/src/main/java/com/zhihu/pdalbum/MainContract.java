@@ -4,13 +4,13 @@ import android.app.Activity;
 
 public interface MainContract {
     interface Presenter{
-        void init();
+
         void getAllImagePath();
         void verifyPermissions(Activity activity);
-        void startImageActivity();
+        void startImageActivity(String url);
     }
     interface View{
-
+        void init();
         void showImages();
 
     }

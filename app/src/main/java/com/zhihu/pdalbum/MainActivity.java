@@ -34,6 +34,8 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.xiaomi.mace.demo.MaceApp;
+import com.xiaomi.mace.demo.camera.MessageEvent;
 import com.yanzhenjie.album.Action;
 import com.yanzhenjie.album.Album;
 import com.yanzhenjie.album.AlbumConfig;
@@ -49,7 +51,7 @@ import java.util.Locale;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class MainActivity extends AppCompatActivity implements MainContract.Presenter {
+public class MainActivity extends AppCompatActivity implements MainContract.View {
     /**
      * 存储手机中所有图片的list集合
      */
@@ -107,19 +109,47 @@ public class MainActivity extends AppCompatActivity implements MainContract.Pres
     View.OnClickListener takeImgClick = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-            Album.camera(context) // Camera function.
-                    .image() // Take Picture.
-                    .onResult(new Action<String>() {
-                        @Override
-                        public void onAction(@NonNull String result) {
-                        }
-                    })
-                    .onCancel(new Action<String>() {
-                        @Override
-                        public void onAction(@NonNull String result) {
-                        }
-                    })
-                    .start();
+            if(view.getId()==R.id.take_img){
+                Album.camera(context) // Camera function.
+                        .image() // Take Picture.
+                        .onResult(new Action<String>() {
+                            @Override
+                            public void onAction(@NonNull String result) {
+                                String path= result;
+                                Intent intent=new Intent(context,ImgActivity.class);
+                                intent.putExtra("path", path);
+                                startActivity(intent);
+                            }
+                        })
+                        .onCancel(new Action<String>() {
+                            @Override
+                            public void onAction(@NonNull String result) {
+                            }
+                        })
+                        .start();
+
+            }
+            else if(view.getId() == R.id.circle_img){
+                Album.camera(context) // Camera function.
+                        .image() // Take Picture.
+                        .onResult(new Action<String>() {
+                            @Override
+                            public void onAction(@NonNull String result) {
+                                String path= result;
+                                Intent intent=new Intent(context,ImgActivity.class);
+                                intent.putExtra("path", path);
+                                startActivity(intent);
+                            }
+                        })
+                        .onCancel(new Action<String>() {
+                            @Override
+                            public void onAction(@NonNull String result) {
+                            }
+                        })
+                        .start();
+
+            }
+
 
         }
     };
@@ -158,7 +188,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.Pres
     }
 
     @Override
-    public void startImageActivity() {
+    public void showImages() {
 
     }
 
@@ -201,7 +231,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.Pres
         ImageView imageView;
     }
 
-    @Override
+
     public void getAllImagePath() {
         Cursor cursor = getContentResolver().query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null, null, null, null);
@@ -224,7 +254,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.Pres
             Manifest.permission.WAKE_LOCK,
     };
     /** 申请录音权限*/
-    @Override
+
     public void verifyPermissions(Activity activity) {
         boolean permission = (ActivityCompat.checkSelfPermission(activity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
                 || (ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)

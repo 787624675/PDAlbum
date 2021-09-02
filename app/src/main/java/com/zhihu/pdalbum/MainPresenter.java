@@ -1,12 +1,14 @@
 package com.zhihu.pdalbum;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 
 public class MainPresenter implements MainContract.Presenter {
-    @Override
-    public void init() {
 
-    }
+    private Context context;
+
+
 
     @Override
     public void getAllImagePath() {
@@ -19,7 +21,11 @@ public class MainPresenter implements MainContract.Presenter {
     }
 
     @Override
-    public void startImageActivity() {
+    public void startImageActivity(String url) {
+        String path= url;
+        Intent intent=new Intent(context,ImgActivity.class);
+        intent.putExtra("path", path);
+        context.startActivity(intent);
 
     }
 }
