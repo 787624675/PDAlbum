@@ -5,6 +5,9 @@ import static com.bumptech.glide.load.resource.drawable.DrawableTransitionOption
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -16,7 +19,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.yanzhenjie.album.app.Contract;
+import com.bumptech.glide.load.engine.Resource;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -28,10 +36,18 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
     private Context context;
     private String imgUrl;
     private MediaPlayer mediaPlayer;
-    private String recordfilename;
+    public static String recordFileName;
     private MediaRecorder mediaRecorder;
 
     private TextView recNote;
+    private PCMEncoderAAC pcmEncoderAAC;
+    private Boolean recorderState;
+
+    private AudioTrack audioTrack;
+    private Boolean isPlaying;
+
+    private byte[] pcmBuffer;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +56,7 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
 
         context = this;
         initView();
+
         showImg(context);
     }
     void initView(){
@@ -54,21 +71,7 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
         rec.setOnTouchListener(mbl);
 
         // see 「empty_xl001」 https://blog.csdn.net/u010574567/article/details/51900453
-        play.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mediaPlayer=new MediaPlayer();
-                try{
-                    mediaPlayer.setDataSource(recordfilename);
-                    mediaPlayer.prepare();
-                    mediaPlayer.start();
-                }catch (Exception e)
-                {
-                    // Log.v("RecordActivity play record ","Expection"+Log.getStackTraceString(e));
-                }
-
-            }
-        });
+        play.setOnClickListener(mbl);
 
 
 
@@ -99,9 +102,8 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
                     // Log.v("Record","1");
                 }
                 if (event.getAction()==MotionEvent.ACTION_UP) {
-                    mediaRecorder.stop();
-                    mediaRecorder.release();
-                    mediaRecorder = null;
+                    AudioRecordUtil.getInstance().stop();
+
                     recNote.setVisibility(View.INVISIBLE);
                     rec.setFillColor(getResources().getColor(R.color.blue_tianyi));
                 }
@@ -113,23 +115,18 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
         public boolean onLongClick(View v) {
             if(v.getId() == R.id.rec){
                 //设置录音文件名，编码格式和输出格式都可以根据自身需要修改，这里使用3gp的配置方式，使用默认的方式产生.amr文件
-                recordfilename= Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+System.currentTimeMillis();
-                recordfilename+=".3gp";
-                //mediarecorder 初始化
-                mediaRecorder=new MediaRecorder();
-                mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);  //录入设备
-                mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);  //输出格式
-                mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB); //编码格式
-                mediaRecorder.setOutputFile(recordfilename); //输出文件路径
+                recordFileName = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+System.currentTimeMillis();
+                recordFileName +=".pcm";
+                Log.d("TAG", "recordFileName: " + recordFileName);
                 try {
-                    mediaRecorder.prepare();
+                    AudioRecordUtil.getInstance().start();
                     recNote.setVisibility(View.VISIBLE);
                     rec.setFillColor(getResources().getColor(R.color.blue_dark));
                 }catch (Exception e)
                 {
                     Log.v("RecordActivity","Expection"+Log.getStackTraceString(e));
                 }
-                mediaRecorder.start();
+//                mediaRecorder.start();
             }
 
             return true;
@@ -138,6 +135,15 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
         @Override
         public void onClick(View view) {
             if (view.getId() == R.id.play){   // 播放所有录音
+//                Thread mt = new Thread(playPCMRecord, "playPCM");
+//                // 步骤4：通过 线程对象 控制线程的状态，如 运行、睡眠、挂起  / 停止
+//                mt.start();
+                try {
+                    playShortAudioFileViaAudioTrack(recordFileName);
+                } catch (IOException e) {
+                    Log.d("TAG", "play Error, recordFileName: " + recordFileName);
+                }
+
 
             }
             else if(view.getId() == R.id.exchange){  // 重新照相或选择图片
@@ -147,7 +153,92 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
 
             }
         }
+        //  https://darksilber.tistory.com/61
+        private void playShortAudioFileViaAudioTrack(String filePath) throws IOException
+        {
+            // We keep temporarily filePath globally as we have only two sample sounds now..
+            if (filePath==null)
+                return;
+
+            //Reading the file..
+            byte[] byteData = null;
+            File file = null;
+            file = new File(filePath); // for ex. path= "/sdcard/samplesound.pcm" or "/sdcard/samplesound.wav"
+            byteData = new byte[(int) file.length()];
+            FileInputStream in = null;
+            try {
+                in = new FileInputStream( file );
+                in.read( byteData );
+                in.close();
+
+            } catch (FileNotFoundException e) {
+// TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+// Set and push to audio track..
+            int intSize = android.media.AudioTrack.getMinBufferSize(8000, AudioFormat.CHANNEL_CONFIGURATION_MONO,
+                    AudioFormat.ENCODING_PCM_8BIT);
+            AudioTrack at = new AudioTrack(AudioManager.STREAM_MUSIC, 8000, AudioFormat.CHANNEL_CONFIGURATION_MONO,
+                    AudioFormat.ENCODING_PCM_8BIT, intSize, AudioTrack.MODE_STREAM);
+            if (at!=null) {
+                at.play();
+// Write the byte array to the track
+                at.write(byteData, 0, byteData.length);
+                at.stop();
+                at.release();
+            }
+            else
+                Log.d("TCAudio", "audio track is not initialised ");
+
+        }
+        private Runnable playPCMRecord = new Runnable() {
+
+            @Override
+            public void run() {
+                Log.d("TAG", "recordFileName: " + recordFileName);
+                int bufferSize = AudioTrack.getMinBufferSize(8000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+                audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 8000, AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
+                FileInputStream fis = null;
+                try {
+                    Log.d("TAG", "recordFileName: " + recordFileName);
+                    audioTrack.play();
+                    fis = new FileInputStream(recordFileName);
+                    byte[] buffer = new byte[bufferSize];
+                    int len = 0;
+                    isPlaying = true;
+                    play.setFillColor(getResources().getColor(R.color.blue_dark));
+                    //    while ((len = fis.read(buffer)) != -1 && !isStop) {
+                    while ((len = fis.read(buffer)) != -1 ) {
+                        Log.d("TAG", "playPCMRecord: len " + len);
+                        audioTrack.write(buffer, 0, len);
+                    }
+
+                } catch (Exception e) {
+                    Log.e("TAG", "playPCMRecord: e : " + e);
+                    e.printStackTrace();
+                } finally {
+                    isPlaying = false;
+                    play.setFillColor(getResources().getColor(R.color.blue_tianyi));
+                    //isStop = false;
+                    if (audioTrack != null) {
+                        audioTrack.stop();
+                        audioTrack = null;
+                    }
+                    if (fis != null) {
+                        try {
+                            fis.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        };
+
     }
+
+
+
 
 
 }
