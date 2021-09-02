@@ -41,6 +41,8 @@ public class ImgPresenter implements ImgContract.Presenter{
 
     ResultData res;
 
+    ClassifyCallBack classifyCallBack;
+
 
     /**
      * mace float[] input
@@ -52,7 +54,8 @@ public class ImgPresenter implements ImgContract.Presenter{
      */
     private static final int FINAL_SIZE = 224;
 
-    public ImgPresenter(){
+    public ImgPresenter(ClassifyCallBack classifyCallBack){
+        this.classifyCallBack = classifyCallBack;
 
     }
 
@@ -109,6 +112,9 @@ public class ImgPresenter implements ImgContract.Presenter{
 
         Log.d("MaceRes: ", "tesultData.name:"+ resultData.name+",probability: "+resultData.probability);
 
+        classifyCallBack.notifyChange( resultData.name+","+resultData.probability);
+
+
 
     }
 
@@ -123,6 +129,10 @@ public class ImgPresenter implements ImgContract.Presenter{
 
 
 
+    }
+
+    public interface ClassifyCallBack {
+        void notifyChange(String data);
     }
 
 

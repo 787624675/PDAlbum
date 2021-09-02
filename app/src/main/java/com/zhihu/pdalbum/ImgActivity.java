@@ -19,7 +19,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.Resource;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,7 +27,7 @@ import java.io.IOException;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class ImgActivity extends AppCompatActivity implements ImgContract.View{
+public class ImgActivity extends AppCompatActivity implements ImgContract.View, ImgPresenter.ClassifyCallBack {
     private ImageView img;
     private CircleImageView rec;
     private CircleImageView play;
@@ -64,7 +63,7 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
     }
     void initView(){
 
-        imgPresenter = new ImgPresenter();
+        imgPresenter = new ImgPresenter(this);
 
         img = findViewById(R.id.img);
         rec = findViewById(R.id.rec);
@@ -94,6 +93,12 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
                 .placeholder(R.drawable.ic_launcher_foreground)
                 .transition(withCrossFade())
                 .into(img);
+    }
+
+    @Override
+    public void notifyChange(String data) {
+        tvClassifyRes.setVisibility(View.VISIBLE);
+        tvClassifyRes.setText(data);
     }
 // https://blog.csdn.net/u010574567/article/details/51900453
 // 首先是Button实现onClick和onTouchListener,
@@ -153,13 +158,13 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
 
             }
             else if(view.getId() == R.id.browse){ // 图像识别/Image Classify
-                imgPresenter.classifyImg(imgUrl,tvClassifyRes);
-                if (tvClassifyRes.getVisibility() == View.VISIBLE){
-                    tvClassifyRes.setVisibility(View.INVISIBLE);
-                }
-                else if(tvClassifyRes.getVisibility() == View.INVISIBLE){
-                    tvClassifyRes.setVisibility(View.VISIBLE);
-                }
+                imgPresenter.classifyImg(imgUrl);
+//                if (tvClassifyRes.getVisibility() == View.VISIBLE){
+//                    tvClassifyRes.setVisibility(View.INVISIBLE);
+//                }
+//                else if(tvClassifyRes.getVisibility() == View.INVISIBLE){
+//                    tvClassifyRes.setVisibility(View.VISIBLE);
+//                }
             }
         }
         //  https://darksilber.tistory.com/61
@@ -245,6 +250,7 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
         };
 
     }
+
 
 
 

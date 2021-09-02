@@ -64,7 +64,6 @@
         <TextView
             android:id="@+id/rec_note"
             android:text="录音中..."
-            android:background="@color/white"
             android:visibility="invisible"
             android:layout_marginTop="10dp"
             android:textSize="20sp"
@@ -75,11 +74,10 @@
         <TextView
             android:id="@+id/classify_res"
             android:text="#这是什么"
-            android:background="@color/white"
-            android:visibility="invisible"
-            android:layout_marginTop="70dp"
-            android:textSize="40sp"
-            android:layout_gravity="left"
+            android:layout_marginTop="200dp"
+            android:textSize="20sp"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="78dp"
             android:layout_marginLeft="20dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
