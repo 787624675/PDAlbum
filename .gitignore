@@ -13,3 +13,10 @@
 .externalNativeBuild
 .cxx
 local.properties
+mace
+macelibrary
+model
+nsAPP
+voicetotext
+SemanticParser_data
+sematic
