@@ -135,14 +135,15 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
         @Override
         public void onClick(View view) {
             if (view.getId() == R.id.play){   // 播放所有录音
-//                Thread mt = new Thread(playPCMRecord, "playPCM");
-//                // 步骤4：通过 线程对象 控制线程的状态，如 运行、睡眠、挂起  / 停止
-//                mt.start();
-                try {
-                    playShortAudioFileViaAudioTrack(recordFileName);
-                } catch (IOException e) {
-                    Log.d("TAG", "play Error, recordFileName: " + recordFileName);
-                }
+                Thread mt = new Thread(playPCMRecord, "playPCM");
+                // 步骤4：通过 线程对象 控制线程的状态，如 运行、睡眠、挂起  / 停止
+                mt.start();
+
+//                try {
+//                    playShortAudioFileViaAudioTrack(recordFileName);
+//                } catch (IOException e) {
+//                    Log.d("TAG", "play Error, recordFileName: " + recordFileName);
+//                }
 
 
             }
@@ -196,8 +197,8 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View{
             @Override
             public void run() {
                 Log.d("TAG", "recordFileName: " + recordFileName);
-                int bufferSize = AudioTrack.getMinBufferSize(8000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-                audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 8000, AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
+                int bufferSize = AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+                audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 44100, AudioFormat.CHANNEL_IN_STEREO,AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
                 FileInputStream fis = null;
                 try {
                     Log.d("TAG", "recordFileName: " + recordFileName);

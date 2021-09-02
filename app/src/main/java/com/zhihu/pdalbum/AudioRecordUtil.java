@@ -16,9 +16,9 @@ import java.io.IOException;
 public class AudioRecordUtil implements PCMEncoderAAC.EncoderListener {
 
     //设置音频采样率，44100是目前的标准，但是某些设备仍然支持22050，16000，11025
-    private final int sampleRateInHz = 8000;
+    private final int sampleRateInHz = 44100;
     //设置音频的录制的声道CHANNEL_IN_STEREO为双声道，CHANNEL_CONFIGURATION_MONO为单声道
-    private final int channelConfig = AudioFormat.CHANNEL_IN_MONO;
+    private final int channelConfig = AudioFormat.CHANNEL_IN_STEREO;
     //音频数据格式:PCM 16位每个样本。保证设备支持。PCM 8位每个样本。不一定能得到设备支持。
     private final int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
     //录制状态
