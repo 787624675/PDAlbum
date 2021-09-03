@@ -1,18 +1,12 @@
 package com.zhihu.pdalbum;
 
-import static com.zhihu.pdalbum.ImgActivity.recordFileName;
-
-import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
 
-import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 
 public class AudioRecordUtil implements PCMEncoderAAC.EncoderListener {
@@ -30,6 +24,7 @@ public class AudioRecordUtil implements PCMEncoderAAC.EncoderListener {
     private static AudioRecordUtil audioRecordUtil = new AudioRecordUtil();
 
     private PCMEncoderAAC pcmEncoderAAC;
+    private String recordFileName;
 
     public static AudioRecordUtil getInstance() {
         return audioRecordUtil;
@@ -62,7 +57,8 @@ public class AudioRecordUtil implements PCMEncoderAAC.EncoderListener {
     /**
      * 开始录制
      */
-    public void start() {
+    public void start(String recordFilePath) {
+        this.recordFileName = recordFilePath;
         if (audioRecord.getState() == AudioRecord.RECORDSTATE_STOPPED) {
             recorderState = true;
             audioRecord.startRecording();
@@ -108,7 +104,7 @@ public class AudioRecordUtil implements PCMEncoderAAC.EncoderListener {
             short sData[] = new short[BufferElements2Rec];
             FileOutputStream os = null;
             try {
-                os = new FileOutputStream(recordFileName);
+                os = new FileOutputStream(recordFileName+".pcm");
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
@@ -118,11 +114,12 @@ public class AudioRecordUtil implements PCMEncoderAAC.EncoderListener {
                 try {
                     byte bData[] = short2byte(sData);
                     os.write(bData, 0, BufferElements2Rec * BytesPerElement);
+                    os.flush();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
-            //recCallBack.onRecCallBack(recordFileName);
+            recCallBack.onRecCallBack(recordFileName);
             try {
                 os.close();
             } catch (IOException e) {
@@ -131,7 +128,7 @@ public class AudioRecordUtil implements PCMEncoderAAC.EncoderListener {
         }
     }
     public interface RecCallBack{
-        public void onRecCallBack(String filePath);
+        void onRecCallBack(String filePath);
     }
 }
 

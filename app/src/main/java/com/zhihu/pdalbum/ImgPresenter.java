@@ -49,6 +49,7 @@ public class ImgPresenter implements ImgContract.Presenter{
 
     ClassifyCallBack classifyCallBack;
     AudioToTextCallBack audioToTextCallBack;
+    SematicCallBack sematicCallBack;
 
 
     /**
@@ -66,6 +67,7 @@ public class ImgPresenter implements ImgContract.Presenter{
                         SematicCallBack sematicCallBack){
         this.classifyCallBack = classifyCallBack;
         this.audioToTextCallBack = audioToTextCallBack;
+        this.sematicCallBack = sematicCallBack;
 
     }
 
@@ -143,29 +145,31 @@ public class ImgPresenter implements ImgContract.Presenter{
         void onAudioToTextCallBack(String data);
     }
     public interface SematicCallBack {
-        void onsematicCallBack(String data);
+        void onSematicCallBack(String data);
     }
 
     @Override
     public void audioDenoise(String audio) {
-        denoiseAudioPath = audio + "_denoise";
-        com.example.nslib.nsUtil.nsProcess(audio,denoiseAudioPath);
+        denoiseAudioPath = audio + "_denoise";  // 这里没给audio加.pcm导致debug了很久qaq
+        com.example.nslib.nsUtil.nsProcess(audio+".pcm",denoiseAudioPath+".pcm");
     }
 
     @Override
     public void audioToText(String audioPath) {
-        audioDenoise(audioPath);
+        audioDenoise(audioPath); // 这里不能加.pcm,不然等会audioDenoise里的文件名就有两个.pcm了
         String audioDenoisePath = audioPath + "_denoise";
         audioModelPath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "audioModel"+ File.separator+"model.bin";
-        String res = TextUtil.getText(audioModelPath,audioDenoisePath);
+        String res = TextUtil.getText(audioModelPath,audioDenoisePath+".pcm");
         audioToTextCallBack.onAudioToTextCallBack(res);
-        audioSematic(audioPath);
+
     }
 
     @Override
     public void audioSematic(String audioPath) {
-        sematicConfigPath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/audioModel/conf";
-        String resSematic = Semantic.textToSemantic(sematicConfigPath,audioPath+"_denoise");
+        sematicConfigPath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/audioModel/conf/gramcel.config";
+        String resSematic = Semantic.textToSemantic(sematicConfigPath,audioPath+"_denoise.pcm");
+        Log.d("AudioSematic","返回值："+resSematic);
+        sematicCallBack.onSematicCallBack(resSematic);
 
     }
 

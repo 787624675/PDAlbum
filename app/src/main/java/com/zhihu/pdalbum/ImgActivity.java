@@ -1,10 +1,12 @@
 package com.zhihu.pdalbum;
 
+import static android.content.ContentValues.TAG;
 import static com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -12,6 +14,8 @@ import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -20,21 +24,26 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.liulishuo.engzo.lingorecorder.LingoRecorder;
+import com.liulishuo.engzo.lingorecorder.processor.AudioProcessor;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ImgActivity extends AppCompatActivity implements ImgContract.View,
         ImgPresenter.ClassifyCallBack ,
         ImgPresenter.AudioToTextCallBack,
-        ImgPresenter.SematicCallBack
+        ImgPresenter.SematicCallBack,
+        AudioRecordUtil.RecCallBack
 {
     static {
         System.loadLibrary("native-lib");
+        System.loadLibrary("yuyin-lib");
     }
     private ImageView img;
     private CircleImageView rec;
@@ -45,7 +54,7 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
     private Context context;
     private String imgUrl;
     private MediaPlayer mediaPlayer;
-    public static String recordFileName;
+    private String recordFileName;
     private MediaRecorder mediaRecorder;
 
     private TextView recNote;
@@ -61,17 +70,53 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
     private EditText etAudioToText;
     private TextView tvSematic;
 
+    private int audioRecorderSetCallBack = 0;
+    private boolean isStop;
+
+    private SharedPreferences sharedPreferences;
+    private SharedPreferences.Editor editor ;
+
+    // 用于缓存
+    private String sematicValue;
+    private String cvValue;
+    private String voiceTextValue;
+
+    private  LingoRecorder lingoRecorder;
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_img);
 
-        initFilePath();
+        sharedPreferences = getSharedPreferences("data",Context.MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+
         context = this;
         initView();
 
         showImg(context);
+
+        lingoRecorder = new LingoRecorder();
+        lingoRecorder.bitsPerSample(16);
+        lingoRecorder.setOnRecordStopListener(new LingoRecorder.OnRecordStopListener() {
+            @Override
+            public void onRecordStop(Throwable throwable,
+                                     Result result) {
+                imgPresenter.audioToText(recordFileName);
+            }
+        });
+        lingoRecorder.setOnProcessStopListener(new LingoRecorder.OnProcessStopListener() {
+            @Override
+            public void onProcessStop(Throwable throwable, Map<String, AudioProcessor> map) {
+
+            }
+        });
+
+
+
     }
     void initView(){
 
@@ -93,12 +138,38 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
         browse.setOnClickListener(mbl);
         play.setOnClickListener(mbl);
 
+        voiceTextValue = sharedPreferences.getString(imgUrl+"voiceText","今天天气真好");
+        etAudioToText.setText(voiceTextValue);
+
+        cvValue = sharedPreferences.getString(imgUrl+"cv","#这是什么");
+        tvClassifyRes.setText(cvValue);
+
+        sematicValue = sharedPreferences.getString(imgUrl+"sematic","sematic");
+        tvSematic.setText(sematicValue);
+        etAudioToText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+                voiceTextValue = charSequence.toString();
+                editor.putString(imgUrl+"voiceText",charSequence.toString());
+                editor.commit();
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+
+            }
+        });
+
 
     }
 
-    void initFilePath(){
-        recordFileName = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+System.currentTimeMillis();
-    }
 
     @Override
     public void showImg(Context context) {
@@ -120,20 +191,30 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
 
     @Override
     public void onAudioToTextCallBack(String data) {
-        etAudioToText.setText(data);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                etAudioToText.setText(data);
+            }
+        });
+        imgPresenter.audioSematic(recordFileName);
+
 
     }
 
     @Override
-    public void onsematicCallBack(String data) {
+    public void onSematicCallBack(String data) {
         tvSematic.setText(data);
-    }
-// https://blog.csdn.net/u010574567/article/details/51900453
-// 首先是Button实现onClick和onTouchListener,
-// 新建一个类，实现这两个接口，注意重写这两个方法，
-// onLongClick
-// onTouch方法中，通过event.getAction() 方法与MotionEvent.ACTION_UP(或其他)的比较，对不同的操作进事件绑定。
 
+        editor.putString(imgUrl+"sematic",data);
+    }
+
+    @Override
+    public void onRecCallBack(String filePath){
+        imgPresenter.audioToText(filePath);
+    }
+
+    // 把几个按钮的点击事件写在了一起，用if-else判断是哪个按钮的
     class MyButtonListener implements View.OnLongClickListener,View.OnTouchListener, View.OnClickListener {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
@@ -142,12 +223,13 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
                     // Log.v("Record","1");
                 }
                 if (event.getAction()==MotionEvent.ACTION_UP) {
-                    AudioRecordUtil.getInstance().stop();
+//                    AudioRecordUtil.getInstance().stop();
+                    lingoRecorder.stop();
 
                     recNote.setVisibility(View.INVISIBLE);
                     rec.setFillColor(getResources().getColor(R.color.blue_tianyi));
 
-                    imgPresenter.audioToText(recordFileName);
+
                 }
             }
             return false;
@@ -156,12 +238,17 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
         @Override
         public boolean onLongClick(View v) {
             if(v.getId() == R.id.rec){
+                isStop = true;  // 停止播放录音
                 //设置录音文件名，编码格式和输出格式都可以根据自身需要修改，这里使用3gp的配置方式，使用默认的方式产生.amr文件
-                recordFileName = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+System.currentTimeMillis();
-                recordFileName +=".pcm";
-                Log.d("TAG", "recordFileName: " + recordFileName);
+                recordFileName = Environment.getExternalStorageDirectory().getAbsolutePath()+File.separator+System.currentTimeMillis();
                 try {
-                    AudioRecordUtil.getInstance().start();
+//                    if(audioRecorderSetCallBack == 0){
+//                        AudioRecordUtil.getInstance().setRecCallBack(ImgActivity.this);
+//                        audioRecorderSetCallBack = 1;
+//                    }
+//
+//                    AudioRecordUtil.getInstance().start(recordFileName);
+                    lingoRecorder.start(recordFileName+".pcm");
                     recNote.setVisibility(View.VISIBLE);
                     rec.setFillColor(getResources().getColor(R.color.blue_dark));
                 }catch (Exception e)
@@ -177,8 +264,42 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
         @Override
         public void onClick(View view) {
             if (view.getId() == R.id.play){   // 播放录音
-                Thread mt = new Thread(playPCMRecord, "playPCM");
-                mt.start();
+
+//                Thread mt = new Thread(playPCMRecord, "playPCM");
+//                mt.start();
+                int bufferSize = AudioTrack.getMinBufferSize(16000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+                audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 16000, AudioFormat.CHANNEL_OUT_STEREO,AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
+                FileInputStream fis = null;
+                try {
+                    audioTrack.play();
+                    fis = new FileInputStream(recordFileName+".pcm");
+                    byte[] buffer = new byte[bufferSize];
+                    int len = 0;
+                    isPlaying = true;
+                    while ((len = fis.read(buffer)) != -1 && !isStop) {
+//                    Log.d(TAG, "playPCMRecord: len " + len);
+                        audioTrack.write(buffer, 0, len);
+                    }
+
+                } catch (Exception e) {
+                    Log.e(TAG, "playPCMRecord: e : " + e);
+                } finally {
+                    isPlaying = false;
+                    isStop = false;
+                    if (audioTrack != null) {
+                        audioTrack.stop();
+                        audioTrack = null;
+                    }
+                    if (fis != null) {
+                        try {
+                            fis.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+
             }
             else if(view.getId() == R.id.exchange){  // 重新照相或选择图片
 
@@ -191,24 +312,19 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
             }
         }
         private Runnable playPCMRecord = new Runnable() {
-
             @Override
             public void run() {
-                Log.d("TAG", "recordFileName: " + recordFileName);
-                int bufferSize = AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-                audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 44100, AudioFormat.CHANNEL_IN_STEREO,AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
+                int bufferSize = AudioTrack.getMinBufferSize(16000, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+                audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 16000, AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
                 FileInputStream fis = null;
                 try {
-                    Log.d("TAG", "recordFileName: " + recordFileName);
                     audioTrack.play();
-                    fis = new FileInputStream(recordFileName);
+                    fis = new FileInputStream(recordFileName+".pcm");
                     byte[] buffer = new byte[bufferSize];
                     int len = 0;
                     isPlaying = true;
-                    play.setFillColor(getResources().getColor(R.color.blue_dark));
-                    //    while ((len = fis.read(buffer)) != -1 && !isStop) {
-                    while ((len = fis.read(buffer)) != -1 ) {
-                        Log.d("TAG", "playPCMRecord: len " + len);
+                    //play.setFillColor(getResources().getColor(R.color.blue_dark));
+                    while ((len = fis.read(buffer)) != -1 && !isStop) {
                         audioTrack.write(buffer, 0, len);
                     }
 
@@ -217,8 +333,8 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
                     e.printStackTrace();
                 } finally {
                     isPlaying = false;
-                    play.setFillColor(getResources().getColor(R.color.blue_tianyi));
-                    //isStop = false;
+                    isStop = true;
+                    //play.setFillColor(getResources().getColor(R.color.blue_tianyi));
                     if (audioTrack != null) {
                         audioTrack.stop();
                         audioTrack = null;

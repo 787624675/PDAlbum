@@ -116,6 +116,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
                             @Override
                             public void onAction(@NonNull String result) {
                                 String path= result;
+                                adapter.notifyDataSetChanged();
+                                adapter.notifyAll();
                                 Intent intent=new Intent(context,ImgActivity.class);
                                 intent.putExtra("path", path);
                                 startActivity(intent);
@@ -175,7 +177,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
             @Override
             public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
                 String path=paths.get(arg2);
-                //当我点击某个图片的时候代表要给圆形ImageView设置头像，所以跳转到MainActivity
+                //当我点击某个图片的时候代表要打开对应的页面
                 Intent intent=new Intent(context,ImgActivity.class);
                 //仅仅跳转过去不行，必须将当前点击图片的路径带过去
                 intent.putExtra("path", path);
