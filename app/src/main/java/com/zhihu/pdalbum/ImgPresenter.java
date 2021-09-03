@@ -166,7 +166,7 @@ public class ImgPresenter implements ImgContract.Presenter{
 
     @Override
     public void audioSematic(String audioPath) {
-        sematicConfigPath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/audioModel/conf/gramcel.config";
+        sematicConfigPath = Environment.getExternalStorageDirectory().getAbsolutePath()+File.separator+"audioModel"+File.separator+"conf"+File.separator+"gramcel.config";
         String resSematic = Semantic.textToSemantic(sematicConfigPath,audioPath+"_denoise.pcm");
         Log.d("AudioSematic","返回值："+resSematic);
         sematicCallBack.onSematicCallBack(resSematic);

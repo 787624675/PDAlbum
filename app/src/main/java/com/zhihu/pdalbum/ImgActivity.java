@@ -3,6 +3,7 @@ package com.zhihu.pdalbum;
 import static android.content.ContentValues.TAG;
 import static com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
@@ -26,11 +27,15 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.liulishuo.engzo.lingorecorder.LingoRecorder;
 import com.liulishuo.engzo.lingorecorder.processor.AudioProcessor;
+import com.yanzhenjie.album.Action;
+import com.yanzhenjie.album.Album;
+import com.yanzhenjie.album.AlbumFile;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -44,11 +49,15 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
     static {
         System.loadLibrary("native-lib");
         System.loadLibrary("yuyin-lib");
+        System.loadLibrary("semantic-lib");
+
     }
     private ImageView img;
     private CircleImageView rec;
+    private CircleImageView exchange;
     private CircleImageView play;
     private CircleImageView browse;
+    private CircleImageView comment;
 
     private ImgPresenter imgPresenter;
     private Context context;
@@ -126,6 +135,8 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
         rec = findViewById(R.id.rec);
         play = findViewById(R.id.play);
         browse = findViewById(R.id.browse);
+        comment = findViewById(R.id.comment);
+        exchange = findViewById(R.id.exchange);
         recNote = findViewById(R.id.rec_note);
         tvSematic = findViewById(R.id.tv_sematic);
         tvClassifyRes = findViewById(R.id.classify_res);
@@ -137,6 +148,8 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
         rec.setOnTouchListener(mbl);
         browse.setOnClickListener(mbl);
         play.setOnClickListener(mbl);
+        comment.setOnClickListener(mbl);
+        exchange.setOnClickListener(mbl);
 
         voiceTextValue = sharedPreferences.getString(imgUrl+"voiceText","今天天气真好");
         etAudioToText.setText(voiceTextValue);
@@ -302,9 +315,32 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View,
 
             }
             else if(view.getId() == R.id.exchange){  // 重新照相或选择图片
+                Album.image(context) // Image selection.
+                        .singleChoice()
+                        .camera(true)
+                        .columnCount(4)
+                        .onResult(new Action<ArrayList<AlbumFile>>() {
+                            @Override
+                            public void onAction(@NonNull ArrayList<AlbumFile> result) {
+                                imgUrl = result.get(0).getPath();
+                                Glide.with(img.getContext())
+                                        .load(imgUrl)
+                                        .error(R.drawable.ic_launcher_foreground)
+                                        .placeholder(R.drawable.ic_launcher_foreground)
+                                        .transition(withCrossFade())
+                                        .into(img);
+                            }
+                        })
+                        .onCancel(new Action<String>() {
+                            @Override
+                            public void onAction(@NonNull String result) {
+                            }
+                        })
+                        .start();
 
             }
-            else if(view.getId() == R.id.comment){ // comment的显示与隐藏
+            else if(view.getId() == R.id.comment){ // 语义分析
+                imgPresenter.audioSematic(recordFileName);
 
             }
             else if(view.getId() == R.id.browse){ // 图像识别/Image Classify

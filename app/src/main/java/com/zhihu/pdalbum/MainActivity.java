@@ -19,6 +19,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -40,6 +41,7 @@ import com.yanzhenjie.album.Action;
 import com.yanzhenjie.album.Album;
 import com.yanzhenjie.album.AlbumConfig;
 import com.yanzhenjie.album.AlbumFile;
+import com.yanzhenjie.album.widget.photoview.gestures.OnGestureListener;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -51,7 +53,11 @@ import java.util.Locale;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class MainActivity extends AppCompatActivity implements MainContract.View {
+public class MainActivity extends AppCompatActivity implements
+        MainContract.View,
+        View.OnTouchListener,
+        GestureDetector.OnGestureListener
+{
     /**
      * 存储手机中所有图片的list集合
      */
@@ -80,9 +86,12 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         setContentView(R.layout.activity_main);
 
         context = this;
+        adapter=new MyGridViewAdapter();
         init();
         verifyPermissions(this);
         getAllImagePath();
+        gestureDetector = new GestureDetector(this);
+
     }
     View.OnClickListener addImgClick = new View.OnClickListener() {
         @Override
@@ -96,6 +105,12 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
                     .onResult(new Action<ArrayList<AlbumFile>>() {
                         @Override
                         public void onAction(@NonNull ArrayList<AlbumFile> result) {
+                            for (int a = 0; a < result.size();a++){
+                                paths.add(0,result.get(a).getPath());
+
+                            }
+                            adapter.notifyDataSetChanged();
+
                         }
                     })
                     .onCancel(new Action<String>() {
@@ -116,11 +131,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
                             @Override
                             public void onAction(@NonNull String result) {
                                 String path= result;
+                                paths.add(0,path);
                                 adapter.notifyDataSetChanged();
-                                adapter.notifyAll();
-                                Intent intent=new Intent(context,ImgActivity.class);
-                                intent.putExtra("path", path);
-                                startActivity(intent);
                             }
                         })
                         .onCancel(new Action<String>() {
@@ -163,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         takeImg = findViewById(R.id.take_img);
         circleImg = findViewById(R.id.circle_img);
 
-        adapter=new MyGridViewAdapter();
+
         mGridView.setAdapter(adapter);
         mAlbumFiles = new ArrayList<AlbumFile>();
         Album.initialize(AlbumConfig.newBuilder(this)
@@ -192,6 +204,79 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     @Override
     public void showImages() {
 
+    }
+
+    private int firstItemPos;
+    private float lastY;
+    private float curY;
+    private GestureDetector gestureDetector;
+
+    @Override
+    public void scaleCircleImage() {
+        mGridView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                gestureDetector.onTouchEvent(motionEvent);
+                return false;
+            }
+        });
+        mGridView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView absListView, int i) {
+
+            }
+
+            @Override
+            public void onScroll(AbsListView absListView, int i, int i1, int i2) {
+                firstItemPos = i;
+
+            }
+        });
+    }
+
+
+
+    @Override
+    public boolean onDown(MotionEvent motionEvent) {
+        return false;
+    }
+
+    @Override
+    public void onShowPress(MotionEvent motionEvent) {
+
+    }
+
+    @Override
+    public boolean onSingleTapUp(MotionEvent motionEvent) {
+        return false;
+    }
+
+    @Override
+    public boolean onScroll(MotionEvent motionEvent, MotionEvent motionEvent1, float v, float v1) {
+//        if(firstItemPos >= 0 && firstItemPos <= 20){
+//            if(firstItemPos <= 0 && firstItemPos >= -20){
+//            LinearLayout.LayoutParams newParams = new LinearLayout.LayoutParams(circleImg.getLayoutParams());
+//            newParams.height = (int) ((float)cur_param-v1);
+//            newParams.weight = (int) ((float)cur_param-v1);
+        Log.d("onScroll firstItemPos:",""+firstItemPos);
+        Log.d("onScroll motionEvent1:",motionEvent1.toString());
+//        }
+        return false;
+    }
+
+    @Override
+    public void onLongPress(MotionEvent motionEvent) {
+
+    }
+
+    @Override
+    public boolean onFling(MotionEvent motionEvent, MotionEvent motionEvent1, float v, float v1) {
+        return false;
+    }
+
+    @Override
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+        return false;
     }
 
     class MyGridViewAdapter extends BaseAdapter {
@@ -241,7 +326,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         while (cursor.moveToNext()) {
             String path = cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.DATA));
             //将图片路径添加到集合
-            paths.add(path);
+            paths.add(0,path);
         }
         cursor.close();
     }

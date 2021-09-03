@@ -12,6 +12,7 @@ public interface MainContract {
     interface View{
         void init();
         void showImages();
+        void scaleCircleImage();
 
     }
 }
