@@ -15,6 +15,7 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -27,7 +28,14 @@ import java.io.IOException;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class ImgActivity extends AppCompatActivity implements ImgContract.View, ImgPresenter.ClassifyCallBack {
+public class ImgActivity extends AppCompatActivity implements ImgContract.View,
+        ImgPresenter.ClassifyCallBack ,
+        ImgPresenter.AudioToTextCallBack,
+        ImgPresenter.SematicCallBack
+{
+    static {
+        System.loadLibrary("native-lib");
+    }
     private ImageView img;
     private CircleImageView rec;
     private CircleImageView play;
@@ -50,12 +58,16 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View, 
     private byte[] pcmBuffer;
     private TextView tvClassifyRes;
 
+    private EditText etAudioToText;
+    private TextView tvSematic;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_img);
 
+        initFilePath();
         context = this;
         initView();
 
@@ -63,14 +75,16 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View, 
     }
     void initView(){
 
-        imgPresenter = new ImgPresenter(this);
+        imgPresenter = new ImgPresenter(this,this,this);
 
         img = findViewById(R.id.img);
         rec = findViewById(R.id.rec);
         play = findViewById(R.id.play);
         browse = findViewById(R.id.browse);
         recNote = findViewById(R.id.rec_note);
+        tvSematic = findViewById(R.id.tv_sematic);
         tvClassifyRes = findViewById(R.id.classify_res);
+        etAudioToText = findViewById(R.id.et_audio_to_text);
 
         MyButtonListener mbl=new MyButtonListener();
 
@@ -80,7 +94,10 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View, 
         play.setOnClickListener(mbl);
 
 
+    }
 
+    void initFilePath(){
+        recordFileName = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+System.currentTimeMillis();
     }
 
     @Override
@@ -100,6 +117,17 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View, 
         tvClassifyRes.setVisibility(View.VISIBLE);
         tvClassifyRes.setText(data);
     }
+
+    @Override
+    public void onAudioToTextCallBack(String data) {
+        etAudioToText.setText(data);
+
+    }
+
+    @Override
+    public void onsematicCallBack(String data) {
+        tvSematic.setText(data);
+    }
 // https://blog.csdn.net/u010574567/article/details/51900453
 // 首先是Button实现onClick和onTouchListener,
 // 新建一个类，实现这两个接口，注意重写这两个方法，
@@ -118,6 +146,8 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View, 
 
                     recNote.setVisibility(View.INVISIBLE);
                     rec.setFillColor(getResources().getColor(R.color.blue_tianyi));
+
+                    imgPresenter.audioToText(recordFileName);
                 }
             }
             return false;
@@ -146,9 +176,8 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View, 
 
         @Override
         public void onClick(View view) {
-            if (view.getId() == R.id.play){   // 播放所有录音
+            if (view.getId() == R.id.play){   // 播放录音
                 Thread mt = new Thread(playPCMRecord, "playPCM");
-                // 步骤4：通过 线程对象 控制线程的状态，如 运行、睡眠、挂起  / 停止
                 mt.start();
             }
             else if(view.getId() == R.id.exchange){  // 重新照相或选择图片
@@ -159,51 +188,7 @@ public class ImgActivity extends AppCompatActivity implements ImgContract.View, 
             }
             else if(view.getId() == R.id.browse){ // 图像识别/Image Classify
                 imgPresenter.classifyImg(imgUrl);
-//                if (tvClassifyRes.getVisibility() == View.VISIBLE){
-//                    tvClassifyRes.setVisibility(View.INVISIBLE);
-//                }
-//                else if(tvClassifyRes.getVisibility() == View.INVISIBLE){
-//                    tvClassifyRes.setVisibility(View.VISIBLE);
-//                }
             }
-        }
-        //  https://darksilber.tistory.com/61
-        private void playShortAudioFileViaAudioTrack(String filePath) throws IOException
-        {
-            // We keep temporarily filePath globally as we have only two sample sounds now..
-            if (filePath==null)
-                return;
-
-            //Reading the file..
-            byte[] byteData = null;
-            File file = null;
-            file = new File(filePath); // for ex. path= "/sdcard/samplesound.pcm" or "/sdcard/samplesound.wav"
-            byteData = new byte[(int) file.length()];
-            FileInputStream in = null;
-            try {
-                in = new FileInputStream( file );
-                in.read( byteData );
-                in.close();
-
-            } catch (FileNotFoundException e) {
-// TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-// Set and push to audio track..
-            int intSize = android.media.AudioTrack.getMinBufferSize(8000, AudioFormat.CHANNEL_CONFIGURATION_MONO,
-                    AudioFormat.ENCODING_PCM_8BIT);
-            AudioTrack at = new AudioTrack(AudioManager.STREAM_MUSIC, 8000, AudioFormat.CHANNEL_CONFIGURATION_MONO,
-                    AudioFormat.ENCODING_PCM_8BIT, intSize, AudioTrack.MODE_STREAM);
-            if (at!=null) {
-                at.play();
-// Write the byte array to the track
-                at.write(byteData, 0, byteData.length);
-                at.stop();
-                at.release();
-            }
-            else
-                Log.d("TCAudio", "audio track is not initialised ");
-
         }
         private Runnable playPCMRecord = new Runnable() {
 

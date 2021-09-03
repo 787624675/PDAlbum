@@ -11,18 +11,22 @@
 
         <ImageView
             android:id="@+id/img"
+            android:layout_marginTop="80dp"
+            android:layout_marginBottom="80dp"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
         <LinearLayout
             android:gravity="right"
+            android:layout_marginTop="200dp"
             android:layout_marginBottom="30dp"
-            android:layout_gravity="bottom"
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
+            android:layout_gravity="right"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content">
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/exchange"
                 android:layout_gravity="bottom"
+                android:layout_marginTop="10dp"
                 android:src="@mipmap/exchange"
                 app:civ_fill_color="@color/blue_tianyi"
                 android:layout_marginRight="20dp"
@@ -31,6 +35,7 @@
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/comment"
                 android:layout_gravity="bottom"
+                android:layout_marginTop="10dp"
                 android:src="@mipmap/comment"
                 app:civ_fill_color="@color/blue_tianyi"
                 android:layout_marginRight="20dp"
@@ -39,6 +44,7 @@
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/browse"
                 android:layout_gravity="bottom"
+                android:layout_marginTop="10dp"
                 android:src="@mipmap/browse"
                 app:civ_fill_color="@color/blue_tianyi"
                 android:layout_marginRight="20dp"
@@ -47,6 +53,7 @@
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/play"
             android:layout_gravity="bottom"
+            android:layout_marginTop="10dp"
             android:src="@mipmap/play"
             app:civ_fill_color="@color/blue_tianyi"
             android:layout_marginRight="20dp"
@@ -56,6 +63,7 @@
             android:id="@+id/rec"
             android:layout_gravity="bottom"
             android:src="@mipmap/microphone"
+            android:layout_marginTop="10dp"
             app:civ_fill_color="@color/blue_tianyi"
             android:layout_marginRight="20dp"
             android:layout_width="40dp"
@@ -77,10 +85,28 @@
             android:layout_marginTop="200dp"
             android:textSize="20sp"
             android:layout_gravity="bottom"
-            android:layout_marginBottom="78dp"
+            android:layout_marginBottom="30dp"
             android:layout_marginLeft="20dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
+        <TextView
+            android:id="@+id/tv_sematic"
+            android:text="#sematic"
+            android:layout_marginTop="200dp"
+            android:textSize="20sp"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="60dp"
+            android:layout_marginLeft="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <EditText
+            android:id="@+id/et_audio_to_text"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="20dp"
+            android:text="要说些什么？"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
 
     </FrameLayout>
 

@@ -11,6 +11,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import com.example.semantic.Semantic;
+import com.example.testyuyinjni.TextUtil;
 import com.xiaomi.mace.JniMaceUtils;
 import com.xiaomi.mace.demo.AppModel;
 import com.xiaomi.mace.demo.MaceApp;
@@ -39,9 +41,14 @@ public class ImgPresenter implements ImgContract.Presenter{
     float[] classifyRes;
     String imgPath;
 
+    String audioModelPath;
+    String denoiseAudioPath;
+    String sematicConfigPath;
+
     ResultData res;
 
     ClassifyCallBack classifyCallBack;
+    AudioToTextCallBack audioToTextCallBack;
 
 
     /**
@@ -54,8 +61,11 @@ public class ImgPresenter implements ImgContract.Presenter{
      */
     private static final int FINAL_SIZE = 224;
 
-    public ImgPresenter(ClassifyCallBack classifyCallBack){
+    public ImgPresenter(ClassifyCallBack classifyCallBack,
+                        AudioToTextCallBack audioToTextCallBack,
+                        SematicCallBack sematicCallBack){
         this.classifyCallBack = classifyCallBack;
+        this.audioToTextCallBack = audioToTextCallBack;
 
     }
 
@@ -114,8 +124,6 @@ public class ImgPresenter implements ImgContract.Presenter{
 
         classifyCallBack.notifyChange( resultData.name+","+resultData.probability);
 
-
-
     }
 
     /** 从缓存中获取图片 **/
@@ -126,13 +134,39 @@ public class ImgPresenter implements ImgContract.Presenter{
         //精确缩放到指定大小
         Bitmap thumbImg = Bitmap.createScaledBitmap(bmp,FINAL_SIZE,FINAL_SIZE, true);
         return thumbImg;
-
-
-
     }
 
     public interface ClassifyCallBack {
         void notifyChange(String data);
+    }
+    public interface AudioToTextCallBack {
+        void onAudioToTextCallBack(String data);
+    }
+    public interface SematicCallBack {
+        void onsematicCallBack(String data);
+    }
+
+    @Override
+    public void audioDenoise(String audio) {
+        denoiseAudioPath = audio + "_denoise";
+        com.example.nslib.nsUtil.nsProcess(audio,denoiseAudioPath);
+    }
+
+    @Override
+    public void audioToText(String audioPath) {
+        audioDenoise(audioPath);
+        String audioDenoisePath = audioPath + "_denoise";
+        audioModelPath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "audioModel"+ File.separator+"model.bin";
+        String res = TextUtil.getText(audioModelPath,audioDenoisePath);
+        audioToTextCallBack.onAudioToTextCallBack(res);
+        audioSematic(audioPath);
+    }
+
+    @Override
+    public void audioSematic(String audioPath) {
+        sematicConfigPath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/audioModel/conf";
+        String resSematic = Semantic.textToSemantic(sematicConfigPath,audioPath+"_denoise");
+
     }
 
 

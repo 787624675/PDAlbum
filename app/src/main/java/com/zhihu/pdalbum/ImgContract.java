@@ -9,6 +9,11 @@ public interface ImgContract {
         void classifyImg(String imgPath);
         void convertImg2Float();
         void handleColorRgbs();
+        // 语音处理
+        void audioDenoise(String audioPath);
+        void audioToText(String audioPath);
+        void audioSematic(String audioPath);
+
 
 
 

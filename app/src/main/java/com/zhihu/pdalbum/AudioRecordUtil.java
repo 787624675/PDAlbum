@@ -1,5 +1,7 @@
 package com.zhihu.pdalbum;
 
+import static com.zhihu.pdalbum.ImgActivity.recordFileName;
+
 import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -33,8 +35,16 @@ public class AudioRecordUtil implements PCMEncoderAAC.EncoderListener {
         return audioRecordUtil;
     }
 
+    private RecCallBack recCallBack;
+
+    public void setRecCallBack(RecCallBack recCallBack){
+        this.recCallBack = recCallBack;
+    }
+
     private AudioRecordUtil() {
+
         init();
+
     }
 
     private void init() {
@@ -98,7 +108,7 @@ public class AudioRecordUtil implements PCMEncoderAAC.EncoderListener {
             short sData[] = new short[BufferElements2Rec];
             FileOutputStream os = null;
             try {
-                os = new FileOutputStream(ImgActivity.recordFileName);
+                os = new FileOutputStream(recordFileName);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
@@ -112,12 +122,16 @@ public class AudioRecordUtil implements PCMEncoderAAC.EncoderListener {
                     e.printStackTrace();
                 }
             }
+            //recCallBack.onRecCallBack(recordFileName);
             try {
                 os.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+    }
+    public interface RecCallBack{
+        public void onRecCallBack(String filePath);
     }
 }
 
