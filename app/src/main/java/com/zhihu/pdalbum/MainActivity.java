@@ -93,9 +93,11 @@ public class MainActivity extends AppCompatActivity implements
         gestureDetector = new GestureDetector(this);
 
     }
+    // 添加图片的（图片）按钮被点击
     View.OnClickListener addImgClick = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
+            // 会显示一个带有相机的（图片）文件选择器
             Album.image(context) // Image selection.
                     .multipleChoice()
                     .camera(true)
@@ -121,9 +123,11 @@ public class MainActivity extends AppCompatActivity implements
                     .start();
         }
     };
+    // 两个拍照按钮的监听器写在了一起，用if-else判断
     View.OnClickListener takeImgClick = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
+            // 上面的小图片按钮：拍照后添加到gridView中
             if(view.getId()==R.id.take_img){
                 Album.camera(context) // Camera function.
                         .image() // Take Picture.
@@ -143,6 +147,7 @@ public class MainActivity extends AppCompatActivity implements
                         .start();
 
             }
+            // 下面的大的圆形照相机图片：拍照后跳转到照片页面
             else if(view.getId() == R.id.circle_img){
                 Album.camera(context) // Camera function.
                         .image() // Take Picture.
